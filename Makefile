@@ -125,6 +125,7 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
 
 UPROGS=\
 	$U/_cat\
+	$U/_test_1\
 	$U/_crypto_cli\
 	$U/_crypto_srv\
 	$U/_echo\

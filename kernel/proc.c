@@ -688,3 +688,77 @@ procdump(void)
     printf("\n");
   }
 }
+//ADDED HERE
+// Allocate PTEs and to a known physical memory adresses (only if it is in a row) to grow process from oldsz to newsz
+
+
+//ADDED HERE
+uint64 
+map_shared_pages(struct proc* src_proc, struct proc* dst_proc, uint64 src_va, uint64 size)
+{
+    if(size<=0){
+        return 0;
+    }
+    pte_t *src_pte;
+    uint64 src_pa, src_offset = src_va - PGROUNDDOWN(src_va);
+    
+    src_va=PGROUNDDOWN(src_va);
+    for(int i=0;i<PGROUNDUP(size);i+=PGSIZE){
+        src_pte=walk(src_proc->pagetable, src_va, 0);
+        if (src_pte == 0 || (*src_pte & PTE_V) == 0) {
+            uvmunmap(dst_proc->pagetable, PGROUNDDOWN(dst_proc->sz - i), i/PGSIZE, 1);
+            return -1;
+        }
+        src_pa = PTE2PA(*src_pte);
+        if(mappages(dst_proc->pagetable, PGROUNDUP(dst_proc->sz), PGSIZE, src_pa, PTE_FLAGS(*src_pte)|PTE_S) != 0){
+            uvmunmap(dst_proc->pagetable, PGROUNDDOWN(dst_proc->sz - i), i/PGSIZE, 1);
+            return -1;
+        }
+        src_va += PGSIZE;
+        dst_proc->sz += PGSIZE;
+    }
+    return PGROUNDDOWN(dst_proc->sz - PGROUNDUP(size)) + src_offset;
+}
+
+uint64 
+unmap_shared_pages(struct proc* p, uint64 addr, uint64 size){
+  if(size<=0){
+    return -1;
+  }
+  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(size)/PGSIZE, 1);
+  p->sz = p->sz-PGROUNDUP(size);
+  return 0;
+  pagetable_t pagetable=p->pagetable;
+  uint64 va = PGROUNDDOWN(addr);
+  uint64 npages = PGROUNDUP(size)/PGSIZE;
+
+  uint64 a;
+  pte_t *pte;
+
+  if((va % PGSIZE) != 0)
+    return -1;
+
+  for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
+    if((pte = walk(pagetable, a, 0)) == 0)
+      return -1;
+    if((*pte & PTE_V) == 0)
+      return -1;
+    if(PTE_FLAGS(*pte) == PTE_V)
+      return -1;
+    if(!(*pte & PTE_S)){
+      return -1;
+    }
+    *pte = 0;
+  }
+}
+
+
+struct proc*  getproc(int id){
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++) {
+      if (p->pid == id){
+        return p;
+      }
+  }
+  return 0;
+}

@@ -20,6 +20,10 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_map_shared_pages 22
+#define SYS_unmap_shared_pages 23
 #define SYS_crypto_op 24
 #define SYS_take_shared_memory_request 25
 #define SYS_remove_shared_memory_request 26
+
+

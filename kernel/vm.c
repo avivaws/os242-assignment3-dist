@@ -183,7 +183,7 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not mapped");
     if(PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
-    if(do_free){
+    if(do_free&&!(*pte & PTE_S)){
       uint64 pa = PTE2PA(*pte);
       kfree((void*)pa);
     }
@@ -225,6 +225,7 @@ uvmfirst(pagetable_t pagetable, uchar *src, uint sz)
 uint64
 uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
 {
+  //printf("damn\n");
   char *mem;
   uint64 a;
 
@@ -245,6 +246,7 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
       return 0;
     }
   }
+  //printf("old size: %p\n", oldsz);
   return newsz;
 }
 
@@ -437,3 +439,5 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+
